@@ -1,0 +1,31 @@
+# Plans on pull requests, applies on merge to main. All provisioning logic runs in azure-aks-platform.
+name: AKS
+
+on:
+  pull_request:
+    paths: ["environments/**"]
+  push:
+    branches: [main]
+    paths: ["environments/**"]
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [plan, apply]
+        default: plan
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  prod:
+    # Keep the @ref and platform_version on the same platform release
+    uses: my-org/azure-aks-platform/.github/workflows/provision.yml@v1.0.0
+    with:
+      platform_version: v1.0.0
+      environment: prod
+      action: ${{ github.event_name == 'push' && 'apply' || inputs.action || 'plan' }}
+      state_resource_group: rg-tfstate-prod
+      state_storage_account: sttfstateprod001
+    secrets: inherit   # AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
